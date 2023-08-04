@@ -137,6 +137,7 @@ class MyFrame1(wx.Frame):
     def getids(self, event):
         event.Skip()
         import numpy as np
+        from PIL import Image
         # 打开选择文件夹
         dlg = wx.DirDialog(self, "Choose a directory:",
                            style=wx.DD_DEFAULT_STYLE | wx.DD_NEW_DIR_BUTTON)
@@ -144,13 +145,24 @@ class MyFrame1(wx.Frame):
             target = dlg.GetPath()
             fs = os.listdir(target)
             ids = set()
+            mode_set = set()
             for f in fs:
                 if not f.endswith('.png'):
                     continue
-                img = cv2.imread(os.path.join(target, f))
-                uniid = np.unique(img)
-                ids.update(uniid)
+                img = Image.open(os.path.join(target, f))
+                mode = img.mode
+                if mode == 'L':
+                    uniid = np.unique(img)
+                    ids.update(uniid)
+                elif mode == 'P':
+                    uniid = np.unique(img)
+                    ids.update(uniid)
+                else:
+                    wx.InfoMessageBox("Image mode do not support", "Message", wx.OK | wx.ICON_INFORMATION)
+                    return
+                mode_set.add(mode)
             print(ids)
+            print(mode_set)
             wx.MessageBox(' '.join(str(ids)), "Message", wx.OK | wx.ICON_INFORMATION)
 
 
