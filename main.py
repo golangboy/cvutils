@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 import os
+import shutil
 
 import cv2
 ###########################################################################
@@ -43,8 +44,12 @@ class MyFrame1(wx.Frame):
         self.m_button12 = wx.Button(self, wx.ID_ANY, u"获取所有分类值", wx.DefaultPosition, wx.DefaultSize, 0)
         bSizer1.Add(self.m_button12, 0, wx.ALL, 5)
 
-        self.m_button6 = wx.Button(self, wx.ID_ANY, u"调色板类转单通道mask", wx.DefaultPosition, wx.DefaultSize, 0)
+        self.m_button6 = wx.Button(self, wx.ID_ANY, u"调色板类转单通道mask(255的值设置为0)", wx.DefaultPosition,
+                                   wx.DefaultSize, 0)
         bSizer1.Add(self.m_button6, 0, wx.ALL, 5)
+
+        self.m_button7 = wx.Button(self, wx.ID_ANY, u"提取voc数据集的分割任务", wx.DefaultPosition, wx.DefaultSize, 0)
+        bSizer1.Add(self.m_button7, 0, wx.ALL, 5)
 
         self.SetSizer(bSizer1)
         self.Layout()
@@ -58,6 +63,7 @@ class MyFrame1(wx.Frame):
         self.m_button11.Bind(wx.EVT_LEFT_DOWN, self.addmask)
         self.m_button12.Bind(wx.EVT_LEFT_DOWN, self.getids)
         self.m_button6.Bind(wx.EVT_LEFT_DOWN, self.patto8)
+        self.m_button7.Bind(wx.EVT_LEFT_DOWN, self.handlevoc)
 
     def __del__(self):
         pass
@@ -203,9 +209,42 @@ class MyFrame1(wx.Frame):
                     continue
                 img = Image.open(os.path.join(target, f))
                 img = np.array(img)
+                img[img == 255] = 0
                 for index, cl in enumerate(ids):
                     img[img == cl] = index
                 cv2.imwrite(os.path.join(target, f), img)
+
+    def handlevoc(self, event):
+        event.Skip()
+        dlg = wx.DirDialog(self, "Choose a directory:",
+                           style=wx.DD_DEFAULT_STYLE | wx.DD_NEW_DIR_BUTTON)
+        if dlg.ShowModal() == wx.ID_OK:
+            voc_path = dlg.GetPath()
+            segmentation_train = os.path.join(voc_path, 'ImageSets', "Segmentation", "train.txt")
+            segmentation_val = os.path.join(voc_path, 'ImageSets', "Segmentation", "val.txt")
+            dlg = wx.DirDialog(self, "Choose a output directory:",
+                               style=wx.DD_DEFAULT_STYLE | wx.DD_NEW_DIR_BUTTON)
+            if dlg.ShowModal() == wx.ID_OK:
+                save_path = dlg.GetPath()
+                os.makedirs(os.path.join(save_path, "train", "images"), exist_ok=True)
+                os.makedirs(os.path.join(save_path, "train", "masks"), exist_ok=True)
+                os.makedirs(os.path.join(save_path, "val", "images"), exist_ok=True)
+                os.makedirs(os.path.join(save_path, "val", "masks"), exist_ok=True)
+                with open(segmentation_train, 'r') as f:
+                    fs = f.readlines()
+                    for line in fs:
+                        shutil.copy(os.path.join(voc_path, "JPEGImages", line[:-1] + ".jpg"),
+                                    os.path.join(save_path, "train", "images"))
+                        shutil.copy(os.path.join(voc_path, "SegmentationClass", line[:-1] + ".png"),
+                                    os.path.join(save_path, "train", "masks"))
+
+                with open(segmentation_val, 'r') as f:
+                    fs = f.readlines()
+                    for line in fs:
+                        shutil.copy(os.path.join(voc_path, "JPEGImages", line[:-1] + ".jpg"),
+                                    os.path.join(save_path, "val", "images"))
+                        shutil.copy(os.path.join(voc_path, "SegmentationClass", line[:-1] + ".png"),
+                                    os.path.join(save_path, "val", "masks"))
 
 
 if __name__ == '__main__':
