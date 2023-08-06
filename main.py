@@ -3,6 +3,7 @@ import os
 import shutil
 
 import cv2
+import numpy as np
 ###########################################################################
 ## Python code generated with wxFormBuilder (version 3.10.1-368-g19bcc292)
 ## http://www.wxformbuilder.org/
@@ -12,6 +13,7 @@ import cv2
 
 import wx
 import wx.xrc
+
 
 
 ###########################################################################
@@ -44,12 +46,14 @@ class MyFrame1(wx.Frame):
         self.m_button12 = wx.Button(self, wx.ID_ANY, u"获取所有分类值", wx.DefaultPosition, wx.DefaultSize, 0)
         bSizer1.Add(self.m_button12, 0, wx.ALL, 5)
 
-        self.m_button6 = wx.Button(self, wx.ID_ANY, u"调色板类转单通道mask(255的值设置为0)", wx.DefaultPosition,
-                                   wx.DefaultSize, 0)
+        self.m_button6 = wx.Button(self, wx.ID_ANY, u"调色板类转单通道mask", wx.DefaultPosition, wx.DefaultSize, 0)
         bSizer1.Add(self.m_button6, 0, wx.ALL, 5)
 
         self.m_button7 = wx.Button(self, wx.ID_ANY, u"提取voc数据集的分割任务", wx.DefaultPosition, wx.DefaultSize, 0)
         bSizer1.Add(self.m_button7, 0, wx.ALL, 5)
+
+        self.m_button8 = wx.Button(self, wx.ID_ANY, u"单通道mask转为调色板", wx.DefaultPosition, wx.DefaultSize, 0)
+        bSizer1.Add(self.m_button8, 0, wx.ALL, 5)
 
         self.SetSizer(bSizer1)
         self.Layout()
@@ -64,6 +68,7 @@ class MyFrame1(wx.Frame):
         self.m_button12.Bind(wx.EVT_LEFT_DOWN, self.getids)
         self.m_button6.Bind(wx.EVT_LEFT_DOWN, self.patto8)
         self.m_button7.Bind(wx.EVT_LEFT_DOWN, self.handlevoc)
+        self.m_button8.Bind(wx.EVT_LEFT_DOWN, self.mask2pat)
 
     def __del__(self):
         pass
@@ -115,6 +120,7 @@ class MyFrame1(wx.Frame):
                 cw = os.getcwd()
                 os.chdir(save_dir)
                 os.system("mv ./*/*.jpg .")
+
                 os.system("find . -type d -exec rm -r {} \;")
                 os.chdir(cw)
 
@@ -129,7 +135,8 @@ class MyFrame1(wx.Frame):
             for f in fs:
                 if not f.endswith('_mask.png'):
                     continue
-                os.system(f"mv {os.path.join(target, f)} {os.path.join(target, f[:-9] + '.png')}")
+                #os.system(f"mv {os.path.join(target, f)} {os.path.join(target, f[:-9] + '.png')}")
+                shutil.move(os.path.join(target, f), os.path.join(target, f[:-9] + '.png'))
 
     def addmask(self, event):
         event.Skip()
@@ -142,7 +149,8 @@ class MyFrame1(wx.Frame):
             for f in fs:
                 if not f.endswith('.png'):
                     continue
-                os.system(f"mv {os.path.join(target, f)} {os.path.join(target, f[:-4] + '_mask.png')}")
+                #os.system(f"mv {os.path.join(target, f)} {os.path.join(target, f[:-4] + '_mask.png')}")
+                shutil.move(os.path.join(target, f), os.path.join(target, f[:-4] + '_mask.png'))
 
     def getids(self, event):
         event.Skip()
@@ -245,6 +253,30 @@ class MyFrame1(wx.Frame):
                                     os.path.join(save_path, "val", "images"))
                         shutil.copy(os.path.join(voc_path, "SegmentationClass", line[:-1] + ".png"),
                                     os.path.join(save_path, "val", "masks"))
+
+    def mask2pat(self, event):
+        event.Skip()
+        from PIL import Image
+        dlg = wx.DirDialog(self, "maks directory:",
+                           style=wx.DD_DEFAULT_STYLE | wx.DD_NEW_DIR_BUTTON)
+        if dlg.ShowModal() == wx.ID_OK:
+            mask_path = dlg.GetPath()
+            # choice a file
+            dlg = wx.FileDialog(self, "Choose a file",
+                                style=wx.FD_DEFAULT_STYLE | wx.FD_OPEN)
+            if dlg.ShowModal() == wx.ID_OK:
+                file_path = dlg.GetPath()
+                std_file = Image.open(file_path)
+                pat = std_file.getpalette()
+                fs = os.listdir(mask_path)
+                for f in fs:
+                    if not f.endswith('.png'):
+                        print(f)
+                        continue
+                    img = Image.open(os.path.join(mask_path, f)).convert('P')
+                    img.putpalette(pat)
+                    img.save(os.path.join(mask_path, f))
+
 
 
 if __name__ == '__main__':
