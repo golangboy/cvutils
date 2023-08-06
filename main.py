@@ -43,6 +43,9 @@ class MyFrame1(wx.Frame):
         self.m_button12 = wx.Button(self, wx.ID_ANY, u"获取所有分类值", wx.DefaultPosition, wx.DefaultSize, 0)
         bSizer1.Add(self.m_button12, 0, wx.ALL, 5)
 
+        self.m_button6 = wx.Button(self, wx.ID_ANY, u"调色板类转单通道mask", wx.DefaultPosition, wx.DefaultSize, 0)
+        bSizer1.Add(self.m_button6, 0, wx.ALL, 5)
+
         self.SetSizer(bSizer1)
         self.Layout()
 
@@ -54,6 +57,7 @@ class MyFrame1(wx.Frame):
         self.m_button10.Bind(wx.EVT_LEFT_DOWN, self.rmmask)
         self.m_button11.Bind(wx.EVT_LEFT_DOWN, self.addmask)
         self.m_button12.Bind(wx.EVT_LEFT_DOWN, self.getids)
+        self.m_button6.Bind(wx.EVT_LEFT_DOWN, self.patto8)
 
     def __del__(self):
         pass
@@ -164,6 +168,44 @@ class MyFrame1(wx.Frame):
             print(ids)
             print(mode_set)
             wx.MessageBox(' '.join(str(ids)), "Message", wx.OK | wx.ICON_INFORMATION)
+
+    def patto8(self, event):
+        event.Skip()
+        import numpy as np
+        from PIL import Image
+        # 打开选择文件夹
+        dlg = wx.DirDialog(self, "Choose a directory:",
+                           style=wx.DD_DEFAULT_STYLE | wx.DD_NEW_DIR_BUTTON)
+        if dlg.ShowModal() == wx.ID_OK:
+            target = dlg.GetPath()
+            fs = os.listdir(target)
+            ids = set()
+            mode_set = set()
+            for f in fs:
+                if not f.endswith('.png'):
+                    continue
+                img = Image.open(os.path.join(target, f))
+                mode = img.mode
+                if mode == 'L':
+                    uniid = np.unique(img)
+                    ids.update(uniid)
+                elif mode == 'P':
+                    uniid = np.unique(img)
+                    ids.update(uniid)
+                else:
+                    wx.InfoMessageBox("Image mode do not support", "Message", wx.OK | wx.ICON_INFORMATION)
+                    return
+                mode_set.add(mode)
+            print(ids)
+            print(mode_set)
+            for f in fs:
+                if not f.endswith('.png'):
+                    continue
+                img = Image.open(os.path.join(target, f))
+                img = np.array(img)
+                for index, cl in enumerate(ids):
+                    img[img == cl] = index
+                cv2.imwrite(os.path.join(target, f), img)
 
 
 if __name__ == '__main__':
