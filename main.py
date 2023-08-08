@@ -15,7 +15,6 @@ import wx
 import wx.xrc
 
 
-
 ###########################################################################
 ## Class MyFrame1
 ###########################################################################
@@ -24,7 +23,7 @@ class MyFrame1(wx.Frame):
 
     def __init__(self, parent):
         wx.Frame.__init__(self, parent, id=wx.ID_ANY, title=wx.EmptyString, pos=wx.DefaultPosition,
-                          size=wx.Size(500, 300), style=wx.DEFAULT_FRAME_STYLE | wx.TAB_TRAVERSAL)
+                          size=wx.Size(566, 415), style=wx.DEFAULT_FRAME_STYLE | wx.TAB_TRAVERSAL)
 
         self.SetSizeHints(wx.DefaultSize, wx.DefaultSize)
 
@@ -55,6 +54,9 @@ class MyFrame1(wx.Frame):
         self.m_button8 = wx.Button(self, wx.ID_ANY, u"单通道mask转为调色板", wx.DefaultPosition, wx.DefaultSize, 0)
         bSizer1.Add(self.m_button8, 0, wx.ALL, 5)
 
+        self.m_button91 = wx.Button(self, wx.ID_ANY, u"扫描计算miou", wx.DefaultPosition, wx.DefaultSize, 0)
+        bSizer1.Add(self.m_button91, 0, wx.ALL, 5)
+
         self.SetSizer(bSizer1)
         self.Layout()
 
@@ -69,6 +71,7 @@ class MyFrame1(wx.Frame):
         self.m_button6.Bind(wx.EVT_LEFT_DOWN, self.patto8)
         self.m_button7.Bind(wx.EVT_LEFT_DOWN, self.handlevoc)
         self.m_button8.Bind(wx.EVT_LEFT_DOWN, self.mask2pat)
+        self.m_button91.Bind(wx.EVT_LEFT_DOWN, self.calciou)
 
     def __del__(self):
         pass
@@ -135,7 +138,7 @@ class MyFrame1(wx.Frame):
             for f in fs:
                 if not f.endswith('_mask.png'):
                     continue
-                #os.system(f"mv {os.path.join(target, f)} {os.path.join(target, f[:-9] + '.png')}")
+                # os.system(f"mv {os.path.join(target, f)} {os.path.join(target, f[:-9] + '.png')}")
                 shutil.move(os.path.join(target, f), os.path.join(target, f[:-9] + '.png'))
 
     def addmask(self, event):
@@ -149,7 +152,7 @@ class MyFrame1(wx.Frame):
             for f in fs:
                 if not f.endswith('.png'):
                     continue
-                #os.system(f"mv {os.path.join(target, f)} {os.path.join(target, f[:-4] + '_mask.png')}")
+                # os.system(f"mv {os.path.join(target, f)} {os.path.join(target, f[:-4] + '_mask.png')}")
                 shutil.move(os.path.join(target, f), os.path.join(target, f[:-4] + '_mask.png'))
 
     def getids(self, event):
@@ -277,6 +280,49 @@ class MyFrame1(wx.Frame):
                     img.putpalette(pat)
                     img.save(os.path.join(mask_path, f))
 
+    def calciou(self, event):
+        event.Skip()
+        dlg = wx.DirDialog(self, "maks A directory:",
+                           style=wx.DD_DEFAULT_STYLE | wx.DD_NEW_DIR_BUTTON)
+        if dlg.ShowModal() == wx.ID_OK:
+            path_a = dlg.GetPath()
+            dlg = wx.DirDialog(self, "maks B directory:",
+                               style=wx.DD_DEFAULT_STYLE | wx.DD_NEW_DIR_BUTTON)
+            if dlg.ShowModal() == wx.ID_OK:
+                path_b = dlg.GetPath()
+                mask_dira = os.listdir(path_a)
+                mask_dirb = os.listdir(path_b)
+                assert len(mask_dira) == len(mask_dirb)
+                import tqdm
+                import cv2
+                from PIL import Image
+                alliou = 0
+                for index in tqdm.tqdm(range(len(mask_dira))):
+                    filea_name = mask_dira[index]
+                    fileb_name = mask_dirb[index]
+                    assert filea_name == fileb_name
+                    imga = Image.open(os.path.join(path_a, filea_name))
+                    imgb = Image.open(os.path.join(path_b, fileb_name))
+                    imga = np.array(imga)
+                    imgb = np.array(imgb)
+                    assert imga.shape == imgb.shape and len(imga.shape) == 2
+                    # 扫描分类数
+                    classa = np.unique(imga)
+                    classb = np.unique(imgb)
+                    ids = set()
+                    ids.update(classa)
+                    ids.update(classb)
+                    iou = 0
+                    for c in ids:
+                        ins = (imga == c) & (imgb == c)
+                        uni = (imga == c) | (imgb == c)
+                        ciou = np.sum(ins) / np.sum(uni)
+                        iou += ciou
+                    iou /= len(ids)
+                    alliou += iou
+                    pass
+                print(alliou / len(mask_dira))
+                wx.MessageBox("miou:{}".format(alliou / len(mask_dira)), "miou")
 
 
 if __name__ == '__main__':
