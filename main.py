@@ -337,6 +337,7 @@ class MyFrame1(wx.Frame):
                     alliou2 += cal_iou(imga, imgb)
                     pass
                 print(alliou / len(mask_dira))
+                print(alliou2 / len(mask_dira))
                 wx.MessageBox("miou:{}".format(alliou / len(mask_dira)), "miou")
 
 
