@@ -281,6 +281,19 @@ class MyFrame1(wx.Frame):
                     img.save(os.path.join(mask_path, f))
 
     def calciou(self, event):
+        def cal_iou(output, mask):
+            pred_uni = np.unique(output)
+            mask_uni = np.unique(mask)
+            uni = set()
+            uni.update(pred_uni)
+            uni.update(mask_uni)
+            iou = 0
+            for j in uni:
+                ins = (output == j) & (mask == j)
+                union = (output == j) | (mask == j)
+                iou += ins.sum() / union.sum()
+            return iou / len(uni)
+
         event.Skip()
         dlg = wx.DirDialog(self, "maks A directory:",
                            style=wx.DD_DEFAULT_STYLE | wx.DD_NEW_DIR_BUTTON)
@@ -297,6 +310,7 @@ class MyFrame1(wx.Frame):
                 import cv2
                 from PIL import Image
                 alliou = 0
+                alliou2 = 0
                 for index in tqdm.tqdm(range(len(mask_dira))):
                     filea_name = mask_dira[index]
                     fileb_name = mask_dirb[index]
@@ -320,6 +334,7 @@ class MyFrame1(wx.Frame):
                         iou += ciou
                     iou /= len(ids)
                     alliou += iou
+                    alliou2 += cal_iou(imga, imgb)
                     pass
                 print(alliou / len(mask_dira))
                 wx.MessageBox("miou:{}".format(alliou / len(mask_dira)), "miou")
