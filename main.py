@@ -51,11 +51,18 @@ class MyFrame1(wx.Frame):
         self.m_button7 = wx.Button(self, wx.ID_ANY, u"提取voc数据集的分割任务", wx.DefaultPosition, wx.DefaultSize, 0)
         bSizer1.Add(self.m_button7, 0, wx.ALL, 5)
 
+        self.m_button71 = wx.Button(self, wx.ID_ANY, u"提取voc数据集的分割任务(test)", wx.DefaultPosition,
+                                    wx.DefaultSize, 0)
+        bSizer1.Add(self.m_button71, 0, wx.ALL, 5)
+
         self.m_button8 = wx.Button(self, wx.ID_ANY, u"单通道mask转为调色板", wx.DefaultPosition, wx.DefaultSize, 0)
         bSizer1.Add(self.m_button8, 0, wx.ALL, 5)
 
         self.m_button91 = wx.Button(self, wx.ID_ANY, u"扫描计算miou", wx.DefaultPosition, wx.DefaultSize, 0)
         bSizer1.Add(self.m_button91, 0, wx.ALL, 5)
+
+        self.m_button13 = wx.Button(self, wx.ID_ANY, u"所有的jpg转为png", wx.DefaultPosition, wx.DefaultSize, 0)
+        bSizer1.Add(self.m_button13, 0, wx.ALL, 5)
 
         self.SetSizer(bSizer1)
         self.Layout()
@@ -70,8 +77,10 @@ class MyFrame1(wx.Frame):
         self.m_button12.Bind(wx.EVT_LEFT_DOWN, self.getids)
         self.m_button6.Bind(wx.EVT_LEFT_DOWN, self.patto8)
         self.m_button7.Bind(wx.EVT_LEFT_DOWN, self.handlevoc)
+        self.m_button71.Bind(wx.EVT_LEFT_DOWN, self.handlevoc_test)
         self.m_button8.Bind(wx.EVT_LEFT_DOWN, self.mask2pat)
         self.m_button91.Bind(wx.EVT_LEFT_DOWN, self.calciou)
+        self.m_button13.Bind(wx.EVT_LEFT_DOWN, self.jpg2png)
 
     def __del__(self):
         pass
@@ -257,6 +266,24 @@ class MyFrame1(wx.Frame):
                         shutil.copy(os.path.join(voc_path, "SegmentationClass", line[:-1] + ".png"),
                                     os.path.join(save_path, "val", "masks"))
 
+    def handlevoc_test(self, event):
+        event.Skip()
+        dlg = wx.DirDialog(self, "Choose a directory:",
+                           style=wx.DD_DEFAULT_STYLE | wx.DD_NEW_DIR_BUTTON)
+        if dlg.ShowModal() == wx.ID_OK:
+            voc_path = dlg.GetPath()
+            segmentation_test = os.path.join(voc_path, 'ImageSets', "Segmentation", "test.txt")
+            dlg = wx.DirDialog(self, "Choose a output directory:",
+                               style=wx.DD_DEFAULT_STYLE | wx.DD_NEW_DIR_BUTTON)
+            if dlg.ShowModal() == wx.ID_OK:
+                save_path = dlg.GetPath()
+                os.makedirs(os.path.join(save_path, "test", "images"), exist_ok=True)
+                with open(segmentation_test, 'r') as f:
+                    fs = f.readlines()
+                    for line in fs:
+                        shutil.copy(os.path.join(voc_path, "JPEGImages", line[:-1] + ".jpg"),
+                                    os.path.join(save_path, "test", "images"))
+
     def mask2pat(self, event):
         event.Skip()
         from PIL import Image
@@ -339,6 +366,20 @@ class MyFrame1(wx.Frame):
                 print(alliou / len(mask_dira))
                 print(alliou2 / len(mask_dira))
                 wx.MessageBox("miou:{}".format(alliou / len(mask_dira)), "miou")
+
+    def jpg2png(self, event):
+        event.Skip()
+        from PIL import Image
+        import shutil
+        dlg = wx.DirDialog(self, "jpg directory:",
+                           style=wx.DD_DEFAULT_STYLE | wx.DD_NEW_DIR_BUTTON)
+        if dlg.ShowModal() == wx.ID_OK:
+            jpg_path = dlg.GetPath()
+            fs = os.listdir(jpg_path)
+            for f in fs:
+                if not f.endswith('.jpg'):
+                    continue
+                shutil.move(os.path.join(jpg_path, f), os.path.join(jpg_path, f[:-4] + '.png'))
 
 
 if __name__ == '__main__':
