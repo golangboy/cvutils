@@ -229,7 +229,7 @@ class MyFrame1(wx.Frame):
                     continue
                 img = Image.open(os.path.join(target, f))
                 img = np.array(img)
-                img[img == 255] = 0
+                # img[img == 255] = 0
                 for index, cl in enumerate(ids):
                     img[img == cl] = index
                 cv2.imwrite(os.path.join(target, f), img)
