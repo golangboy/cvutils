@@ -23,7 +23,7 @@ class MyFrame1(wx.Frame):
 
     def __init__(self, parent):
         wx.Frame.__init__(self, parent, id=wx.ID_ANY, title=wx.EmptyString, pos=wx.DefaultPosition,
-                          size=wx.Size(470, 503), style=wx.DEFAULT_FRAME_STYLE | wx.TAB_TRAVERSAL)
+                          size=wx.Size(470, 580), style=wx.DEFAULT_FRAME_STYLE | wx.TAB_TRAVERSAL)
 
         self.SetSizeHints(wx.DefaultSize, wx.DefaultSize)
 
@@ -79,6 +79,9 @@ class MyFrame1(wx.Frame):
         self.m_button1311 = wx.Button(self, wx.ID_ANY, u"img[img==1]=255", wx.DefaultPosition, wx.DefaultSize, 0)
         bSizer1.Add(self.m_button1311, 0, wx.ALL, 5)
 
+        self.m_button20 = wx.Button(self, wx.ID_ANY, u"remove_pre", wx.DefaultPosition, wx.DefaultSize, 0)
+        bSizer1.Add(self.m_button20, 0, wx.ALL, 5)
+
         self.SetSizer(bSizer1)
         self.Layout()
 
@@ -99,6 +102,7 @@ class MyFrame1(wx.Frame):
         self.m_button121.Bind(wx.EVT_LEFT_DCLICK, self.twovalue)
         self.m_button1312.Bind(wx.EVT_LEFT_DCLICK, self.img255to1)
         self.m_button1311.Bind(wx.EVT_LEFT_DCLICK, self.img1to255)
+        self.m_button20.Bind(wx.EVT_LEFT_DCLICK, self.remove_pre)
 
     def __del__(self):
         pass
@@ -445,6 +449,19 @@ class MyFrame1(wx.Frame):
                     img_np = np.array(img)
                     img_np[img_np == 1] = 255
                     Image.fromarray(img_np).save(os.path.join(dlg.GetPath(), f))
+
+    def remove_pre(self, event):
+        event.Skip()
+        # 获取输入
+        input_pre = wx.GetTextFromUser("input pre", "input pre", "pre")
+        print(input_pre)
+        dlg = wx.DirDialog(self, "images directory:",
+                           style=wx.DD_DEFAULT_STYLE | wx.DD_NEW_DIR_BUTTON)
+        if dlg.ShowModal() == wx.ID_OK:
+            img_path = os.listdir(dlg.GetPath())
+            for f in img_path:
+                shutil.move(os.path.join(dlg.GetPath(), f), os.path.join(dlg.GetPath(), f[len(input_pre):]))
+        pass
 
 
 if __name__ == '__main__':
