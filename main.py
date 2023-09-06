@@ -23,7 +23,7 @@ class MyFrame1(wx.Frame):
 
     def __init__(self, parent):
         wx.Frame.__init__(self, parent, id=wx.ID_ANY, title=wx.EmptyString, pos=wx.DefaultPosition,
-                          size=wx.Size(566, 415), style=wx.DEFAULT_FRAME_STYLE | wx.TAB_TRAVERSAL)
+                          size=wx.Size(470, 503), style=wx.DEFAULT_FRAME_STYLE | wx.TAB_TRAVERSAL)
 
         self.SetSizeHints(wx.DefaultSize, wx.DefaultSize)
 
@@ -64,6 +64,21 @@ class MyFrame1(wx.Frame):
         self.m_button13 = wx.Button(self, wx.ID_ANY, u"所有的jpg转为png", wx.DefaultPosition, wx.DefaultSize, 0)
         bSizer1.Add(self.m_button13, 0, wx.ALL, 5)
 
+        self.m_button121 = wx.Button(self, wx.ID_ANY, u"二值化", wx.DefaultPosition, wx.DefaultSize, 0)
+        bSizer1.Add(self.m_button121, 0, wx.ALL, 5)
+
+        self.m_button131 = wx.Button(self, wx.ID_ANY, u"img[img==255]=1", wx.DefaultPosition, wx.DefaultSize, 0)
+        bSizer1.Add(self.m_button131, 0, wx.ALL, 5)
+
+        self.m_button15 = wx.Button(self, wx.ID_ANY, u"MyButton", wx.DefaultPosition, wx.DefaultSize, 0)
+        bSizer1.Add(self.m_button15, 0, wx.ALL, 5)
+
+        self.m_button1312 = wx.Button(self, wx.ID_ANY, u"img[img==255]=1", wx.DefaultPosition, wx.DefaultSize, 0)
+        bSizer1.Add(self.m_button1312, 0, wx.ALL, 5)
+
+        self.m_button1311 = wx.Button(self, wx.ID_ANY, u"img[img==1]=255", wx.DefaultPosition, wx.DefaultSize, 0)
+        bSizer1.Add(self.m_button1311, 0, wx.ALL, 5)
+
         self.SetSizer(bSizer1)
         self.Layout()
 
@@ -81,6 +96,9 @@ class MyFrame1(wx.Frame):
         self.m_button8.Bind(wx.EVT_LEFT_DOWN, self.mask2pat)
         self.m_button91.Bind(wx.EVT_LEFT_DOWN, self.calciou)
         self.m_button13.Bind(wx.EVT_LEFT_DOWN, self.jpg2png)
+        self.m_button121.Bind(wx.EVT_LEFT_DCLICK, self.twovalue)
+        self.m_button1312.Bind(wx.EVT_LEFT_DCLICK, self.img255to1)
+        self.m_button1311.Bind(wx.EVT_LEFT_DCLICK, self.img1to255)
 
     def __del__(self):
         pass
@@ -380,6 +398,53 @@ class MyFrame1(wx.Frame):
                 if not f.endswith('.jpg'):
                     continue
                 shutil.move(os.path.join(jpg_path, f), os.path.join(jpg_path, f[:-4] + '.png'))
+
+    def twovalue(self, event):
+        event.Skip()
+        from PIL import Image
+        dlg = wx.DirDialog(self, "images directory:",
+                           style=wx.DD_DEFAULT_STYLE | wx.DD_NEW_DIR_BUTTON)
+        if dlg.ShowModal() == wx.ID_OK:
+            img_path = os.listdir(dlg.GetPath())
+            for f in img_path:
+                if f.endswith(".png") or f.endswith(".jpg"):
+                    img = Image.open(os.path.join(dlg.GetPath(), f))
+                    print(f, img.mode)
+                    img = img.convert("L")
+                    img_np = np.array(img)
+                    img_np[img_np > 200] = 255
+                    img_np[img_np <= 200] = 0
+                    Image.fromarray(img_np).save(os.path.join(dlg.GetPath(), f))
+                    pass
+            pass
+
+    def img255to1(self, event):
+        event.Skip()
+        from PIL import Image
+        dlg = wx.DirDialog(self, "images directory:",
+                           style=wx.DD_DEFAULT_STYLE | wx.DD_NEW_DIR_BUTTON)
+        if dlg.ShowModal() == wx.ID_OK:
+            img_path = os.listdir(dlg.GetPath())
+            for f in img_path:
+                if f.endswith(".png") or f.endswith(".jpg"):
+                    img = Image.open(os.path.join(dlg.GetPath(), f))
+                    img_np = np.array(img)
+                    img_np[img_np == 255] = 1
+                    Image.fromarray(img_np).save(os.path.join(dlg.GetPath(), f))
+
+    def img1to255(self, event):
+        event.Skip()
+        from PIL import Image
+        dlg = wx.DirDialog(self, "images directory:",
+                           style=wx.DD_DEFAULT_STYLE | wx.DD_NEW_DIR_BUTTON)
+        if dlg.ShowModal() == wx.ID_OK:
+            img_path = os.listdir(dlg.GetPath())
+            for f in img_path:
+                if f.endswith(".png") or f.endswith(".jpg"):
+                    img = Image.open(os.path.join(dlg.GetPath(), f))
+                    img_np = np.array(img)
+                    img_np[img_np == 1] = 255
+                    Image.fromarray(img_np).save(os.path.join(dlg.GetPath(), f))
 
 
 if __name__ == '__main__':
