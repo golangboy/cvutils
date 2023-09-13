@@ -23,7 +23,7 @@ class MyFrame1(wx.Frame):
 
     def __init__(self, parent):
         wx.Frame.__init__(self, parent, id=wx.ID_ANY, title=wx.EmptyString, pos=wx.DefaultPosition,
-                          size=wx.Size(470, 580), style=wx.DEFAULT_FRAME_STYLE | wx.TAB_TRAVERSAL)
+                          size=wx.Size(568, 612), style=wx.DEFAULT_FRAME_STYLE | wx.TAB_TRAVERSAL)
 
         self.SetSizeHints(wx.DefaultSize, wx.DefaultSize)
 
@@ -82,6 +82,9 @@ class MyFrame1(wx.Frame):
         self.m_button20 = wx.Button(self, wx.ID_ANY, u"remove_pre", wx.DefaultPosition, wx.DefaultSize, 0)
         bSizer1.Add(self.m_button20, 0, wx.ALL, 5)
 
+        self.m_button18 = wx.Button(self, wx.ID_ANY, u"voc2yolo_detect", wx.DefaultPosition, wx.DefaultSize, 0)
+        bSizer1.Add(self.m_button18, 0, wx.ALL, 5)
+
         self.SetSizer(bSizer1)
         self.Layout()
 
@@ -103,6 +106,7 @@ class MyFrame1(wx.Frame):
         self.m_button1312.Bind(wx.EVT_LEFT_DCLICK, self.img255to1)
         self.m_button1311.Bind(wx.EVT_LEFT_DCLICK, self.img1to255)
         self.m_button20.Bind(wx.EVT_LEFT_DCLICK, self.remove_pre)
+        self.m_button18.Bind(wx.EVT_LEFT_DCLICK, self.voc2yolo_detect)
 
     def __del__(self):
         pass
@@ -462,6 +466,59 @@ class MyFrame1(wx.Frame):
             for f in img_path:
                 shutil.move(os.path.join(dlg.GetPath(), f), os.path.join(dlg.GetPath(), f[len(input_pre):]))
         pass
+
+    def voc2yolo_detect(self, event):
+        event.Skip()
+        dlg = wx.DirDialog(self, "voc xml directory:",
+                           style=wx.DD_DEFAULT_STYLE | wx.DD_NEW_DIR_BUTTON)
+        classes = ["SC", "BD"]
+        if dlg.ShowModal() == wx.ID_OK:
+            import xml.etree.ElementTree as ET
+            img_path = os.listdir(dlg.GetPath())
+
+            def convert(size, box):
+                if size[0] == 0:
+                    dw = 1. / (size[0] + 0.00001)
+                else:
+                    dw = 1. / (size[0])
+
+                if size[0] == 0:
+                    dh = 1. / (size[1] + 0.00001)
+                else:
+                    dh = 1. / (size[1])
+
+                x = (box[0] + box[1]) / 2.0 - 1
+                y = (box[2] + box[3]) / 2.0 - 1
+                w = box[1] - box[0]
+                h = box[3] - box[2]
+                x = x * dw
+                w = w * dw
+                y = y * dh
+                h = h * dh
+                return (x, y, w, h)
+
+            for f in img_path:
+                file_path = os.path.join(dlg.GetPath(), f)
+                out_file = open(file_path[:-4] + ".txt", 'w')
+                if file_path.endswith(".xml"):
+                    in_file = open(file_path)
+                    tree = ET.parse(in_file)
+                    root = tree.getroot()
+                    size = root.find('size')
+                    w = int(size.find('width').text)
+                    h = int(size.find('height').text)
+                    for obj in root.iter('object'):
+                        difficult = obj.find('difficult').text
+                        cls = obj.find('name').text
+                        if cls not in classes or int(difficult) == 1:
+                            continue
+                        cls_id = classes.index(cls)
+                        xmlbox = obj.find('bndbox')
+                        b = (float(xmlbox.find('xmin').text), float(xmlbox.find('xmax').text),
+                             float(xmlbox.find('ymin').text), float(xmlbox.find('ymax').text))
+                        bb = convert((w, h), b)
+                        out_file.write(str(cls_id) + " " + " ".join([str(a) for a in bb]) + '\n')
+                    pass
 
 
 if __name__ == '__main__':
