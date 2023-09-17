@@ -85,6 +85,9 @@ class MyFrame1(wx.Frame):
         self.m_button18 = wx.Button(self, wx.ID_ANY, u"voc2yolo_detect", wx.DefaultPosition, wx.DefaultSize, 0)
         bSizer1.Add(self.m_button18, 0, wx.ALL, 5)
 
+        self.m_button19 = wx.Button(self, wx.ID_ANY, u"mask可视化", wx.DefaultPosition, wx.DefaultSize, 0)
+        bSizer1.Add(self.m_button19, 0, wx.ALL, 5)
+
         self.SetSizer(bSizer1)
         self.Layout()
 
@@ -107,6 +110,7 @@ class MyFrame1(wx.Frame):
         self.m_button1311.Bind(wx.EVT_LEFT_DCLICK, self.img1to255)
         self.m_button20.Bind(wx.EVT_LEFT_DCLICK, self.remove_pre)
         self.m_button18.Bind(wx.EVT_LEFT_DCLICK, self.voc2yolo_detect)
+        self.m_button19.Bind(wx.EVT_LEFT_DOWN, self.mask_visual)
 
     def __del__(self):
         pass
@@ -519,6 +523,20 @@ class MyFrame1(wx.Frame):
                         bb = convert((w, h), b)
                         out_file.write(str(cls_id) + " " + " ".join([str(a) for a in bb]) + '\n')
                     pass
+
+    def mask_visual(self, event):
+        from PIL import Image
+        event.Skip()
+        dlg = wx.FileDialog(self, "Choose a file", style=wx.FD_DEFAULT_STYLE | wx.FD_OPEN)
+        if dlg.ShowModal() == wx.ID_OK:
+            file_path = dlg.GetPath()
+            image = Image.open(file_path)
+            image_np = np.array(image)
+            assert len(image_np.shape) == 2
+            # 对比度拉伸
+            image_np = (image_np - image_np.min()) / (image_np.max() - image_np.min()) * 255
+            image_np = image_np.astype(np.uint8)
+            image = Image.fromarray(image_np).show()
 
 
 if __name__ == '__main__':
